@@ -1,18 +1,13 @@
 // @flow
 /* eslint-disable no-use-before-define */
 
-import type { GroupedTag, SheetOptions, Tag } from './types';
-import { makeTag } from './Tag';
+import type { GroupedTag, Tag } from './types';
 import { SPLITTER } from '../constants';
 import throwStyledError from '../utils/error';
 
 /** Create a GroupedTag with an underlying Tag implementation */
-export const makeGroupedTag = (options: SheetOptions): GroupedTag => {
-  if (options.useMultipleStyles) {
-    return new MultipleSheetsGroupedTag(options);
-  } else {
-    return new DefaultGroupedTag(options);
-  }
+export const makeGroupedTag = (tag: Tag): GroupedTag => {
+  return new DefaultGroupedTag(tag);
 };
 
 const BASE_SIZE = 1 << 9;
@@ -24,10 +19,10 @@ class DefaultGroupedTag implements GroupedTag {
 
   tag: Tag;
 
-  constructor(options: SheetOptions) {
+  constructor(tag: Tag) {
     this.groupSizes = new Uint32Array(BASE_SIZE);
     this.length = BASE_SIZE;
-    this.tag = makeTag(options);
+    this.tag = tag;
   }
 
   indexOfGroup(group: number): number {
@@ -96,55 +91,6 @@ class DefaultGroupedTag implements GroupedTag {
 
     for (let i = startIndex; i < endIndex; i++) {
       css += `${this.tag.getRule(i)}${SPLITTER}`;
-    }
-
-    return css;
-  }
-}
-
-class MultipleSheetsGroupedTag implements GroupedTag {
-  tags: Map<number, Tag>;
-  length: number;
-  options: SheetOptions;
-
-  constructor(options: SheetOptions) {
-    this.options = options;
-    this.tags = new Map();
-    this.length = 0;
-  }
-
-  insertRules(group: number, rules: string[]): void {
-    let tag = this.tags.get(group);
-
-    if (!tag) {
-      tag = makeTag(this.options);
-      this.tags.set(group, tag);
-      this.length = this.tags.size;
-    }
-
-    let ruleIndex = 0;
-    for (let i = 0, l = rules.length; i < l; i++) {
-      if (tag.insertRule(ruleIndex, rules[i])) {
-        ruleIndex++;
-      }
-    }
-  }
-
-  clearGroup(group: number): void {
-    const tag = this.tags.get(group);
-    if (tag) {
-      tag.destroy();
-    }
-    this.tags.delete(group);
-  }
-
-  getGroup(group: number): string {
-    let css = '';
-    const tag = this.tags.get(group);
-    if (!tag) return css;
-
-    for (let i = 0; i < tag.length; i++) {
-      css += `${tag.getRule(i)}${SPLITTER}`;
     }
 
     return css;

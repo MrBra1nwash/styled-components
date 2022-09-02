@@ -9,7 +9,6 @@ type Props = {
   children?: Node,
   disableCSSOMInjection?: boolean,
   disableVendorPrefixes?: boolean,
-  useMultipleStyles?: boolean,
   sheet?: StyleSheet,
   stylisPlugins?: Array<Function>,
   target?: HTMLElement,
@@ -47,10 +46,6 @@ export default function StyleSheetManager(props: Props) {
 
     if (props.disableCSSOMInjection) {
       sheet = sheet.reconstructWithOptions({ useCSSOMInjection: false });
-    }
-
-    if (props.useMultipleStyles) {
-      sheet = sheet.reconstructWithOptions({ useMultipleStyles: true });
     }
 
     return sheet;

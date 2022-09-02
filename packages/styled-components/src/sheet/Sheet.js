@@ -4,6 +4,7 @@ import { EMPTY_OBJECT } from '../utils/empties';
 import { makeGroupedTag } from './GroupedTag';
 import { getGroupForId } from './GroupIDAllocator';
 import { outputSheet, rehydrateSheet } from './Rehydration';
+import { makeTag } from './Tag';
 import type { GroupedTag, Sheet, SheetOptions } from './types';
 
 let SHOULD_REHYDRATE = IS_BROWSER;
@@ -11,7 +12,6 @@ let SHOULD_REHYDRATE = IS_BROWSER;
 type SheetConstructorArgs = {
   isServer?: boolean,
   useCSSOMInjection?: boolean,
-  useMultipleStyles?: boolean,
   target?: HTMLElement,
 };
 
@@ -21,7 +21,6 @@ type NamesAllocationMap = Map<string, Set<string>>;
 const defaultOptions: SheetOptions = {
   isServer: !IS_BROWSER,
   useCSSOMInjection: !DISABLE_SPEEDY,
-  useMultipleStyles: false,
 };
 
 /** Contains the main stylesheet logic for stringification and caching */
@@ -31,6 +30,8 @@ export default class StyleSheet implements Sheet {
   names: NamesAllocationMap;
 
   options: SheetOptions;
+
+  server: boolean;
 
   tag: void | GroupedTag;
 
@@ -51,9 +52,10 @@ export default class StyleSheet implements Sheet {
 
     this.gs = globalStyles;
     this.names = new Map(names);
+    this.server = !!options.isServer;
 
     // We rehydrate only once and use the sheet that is created first
-    if (!this.options.isServer && IS_BROWSER && SHOULD_REHYDRATE) {
+    if (!this.server && IS_BROWSER && SHOULD_REHYDRATE) {
       SHOULD_REHYDRATE = false;
       rehydrateSheet(this);
     }
@@ -73,7 +75,7 @@ export default class StyleSheet implements Sheet {
 
   /** Lazily initialises a GroupedTag for when it's actually needed */
   getTag(): GroupedTag {
-    return this.tag || (this.tag = makeGroupedTag(this.options));
+    return this.tag || (this.tag = makeGroupedTag(makeTag(this.options)));
   }
 
   /** Check whether a name is known for caching */
